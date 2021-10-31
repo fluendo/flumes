@@ -7,10 +7,10 @@ class ConfigError(Exception):
 
 
 class Config(object):
-    SYSTEM_CONFIG = "/etc/flu-config"
+    SYSTEM_CONFIG = "/etc/flume"
 
     def __init__(self, args=None):
-        user_configuration = "{}/{}".format(os.getenv("HOME"), ".flu-config")
+        user_configuration = "{}/{}".format(os.getenv("HOME"), ".flume")
         self.config = configparser.ConfigParser()
         # try with the passed in configuration, if any
         if args and args.config:
