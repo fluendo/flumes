@@ -21,12 +21,22 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+class DiscovererOptions(Options):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        group = self.add_argument_group("discovery")
+        group.add_argument(
+            "-q", "--quit", action="store_true", default=False, help="Quit after scan"
+        )
+
+
 class Discoverer(object):
-    def __init__(self, config):
+    def __init__(self, config, args):
         Gst.init()
 
         self.config = config
         self.loop = GLib.MainLoop()
+        self.quit = args.quit
         schema = Schema(config)
         self.session = schema.create_session()
         # Set the logging level
@@ -36,8 +46,10 @@ class Discoverer(object):
         self.discoverer = GstPbutils.Discoverer.new(5 * Gst.SECOND)
         self.discoverer.connect("discovered", self.on_discovered)
         self.discoverer.connect("finished", self.on_finished)
+        self.numdiscovery = 0
         self.discoverer.start()
         # Iterate over the files in the directory
+        self.numdirs = 1
         path.enumerate_children_async(
             "*",
             Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
@@ -46,6 +58,22 @@ class Discoverer(object):
             self.on_directory_content,
             None,
         )
+
+    def discovery_done(self):
+        self.numdiscovery -= 1
+        if not self.numdirs:
+            logger.debug("No more discoveries")
+        self.check_quit()
+
+    def dir_done(self):
+        self.numdirs -= 1
+        if not self.numdirs:
+            logger.debug("No more dirs")
+        self.check_quit()
+
+    def check_quit(self):
+        if not self.numdirs and not self.numdiscovery and self.quit:
+            self.stop()
 
     def file_stat(self, name, path, mtime):
         # Check if a file exists in the database
@@ -70,6 +98,7 @@ class Discoverer(object):
     def on_discovered(self, discoverer, info, error, *user_data):
         logger.debug("Discovered {}".format(info.get_uri()))
         if not info:
+            self.discovery_done()
             return
 
         if error:
@@ -91,6 +120,7 @@ class Discoverer(object):
         # TODO Add the streams
         # TODO Add the tags
         self.session.commit()
+        self.discovery_done()
 
     def on_finished(self, discoverer, *user_data):
         logger.debug("Finished")
@@ -98,6 +128,7 @@ class Discoverer(object):
     def on_file_found(self, enum, res, user_data):
         files = enum.next_files_finish(res)
         if not files:
+            self.dir_done()
             return
 
         for f in files:
@@ -106,7 +137,8 @@ class Discoverer(object):
                 # recurse
                 path = "{}/{}".format(enum.get_container().get_path(), f.get_name())
                 subdir = Gio.File.new_for_path(path)
-                logger.debug("Recursing {}".format(path))
+                logger.debug("Recursing {} (numdirs: {})".format(path, self.numdirs))
+                self.numdirs += 1
                 subdir.enumerate_children_async(
                     "*",
                     Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
@@ -131,7 +163,12 @@ class Discoverer(object):
                 if needs_update:
                     # Start discovering
                     uri = "file://{}".format(path)
-                    logger.debug("Discovering {}".format(uri))
+                    logger.debug(
+                        "Discovering {} (numdiscovery: {})".format(
+                            uri, self.numdiscovery
+                        )
+                    )
+                    self.numdiscovery += 1
                     self.discoverer.discover_uri_async(uri)
         enum.next_files_async(1, 0, None, self.on_file_found, None)
 
@@ -148,11 +185,11 @@ class Discoverer(object):
 
 
 def main(argv):
-    options = Options()
+    options = DiscovererOptions()
     args = options.parse_args(argv)
     # Read the config file
     config = Config(args)
-    discoverer = Discoverer(config)
+    discoverer = Discoverer(config, args)
     discoverer.start()
 
 
