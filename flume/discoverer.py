@@ -121,7 +121,9 @@ class Discoverer(object):
                     path, self.config.get_media_files_directory()
                 )
                 (dirname, basename) = os.path.split(rel_path)
-                mtime = dateutil.parser.parse(f.get_modification_time().to_iso8601())
+                mtime = dateutil.parser.parse(
+                    f.get_modification_date_time().format_iso8601()
+                )
                 (exists, needs_update) = self.file_stat(basename, dirname, mtime)
                 if not exists:
                     # Fill the File information
