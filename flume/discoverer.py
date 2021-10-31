@@ -110,7 +110,6 @@ class Discoverer(object):
         f = self.get_file(basename, dirname)
         finfo = f.info
         if not finfo:
-            print("no file info")
             finfo = Info(file=f)
             self.session.add(finfo)
         finfo.duration = info.get_duration()
