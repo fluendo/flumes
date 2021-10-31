@@ -12,10 +12,11 @@ import gi
 
 gi.require_version("Gst", "1.0")
 gi.require_version("GstPbutils", "1.0")
-from config import Config
 from gi.repository import Gio, GLib, Gst, GstPbutils
-from options import Options
-from schema import File, Info, Schema
+
+from .config import Config
+from .options import Options
+from .schema import File, Info, Schema
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
