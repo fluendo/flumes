@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import datetime
 import logging
 import os
@@ -14,7 +12,6 @@ gi.require_version("Gst", "1.0")
 gi.require_version("GstPbutils", "1.0")
 from gi.repository import Gio, GLib, Gst, GstPbutils
 
-from .config import Config
 from .options import Options
 from .schema import File, Info, Schema
 
@@ -113,6 +110,7 @@ class Discoverer(object):
         f = self.get_file(basename, dirname)
         finfo = f.info
         if not finfo:
+            print("no file info")
             finfo = Info(file=f)
             self.session.add(finfo)
         finfo.duration = info.get_duration()
@@ -183,16 +181,3 @@ class Discoverer(object):
     def stop(self):
         self.discoverer.stop()
         self.loop.quit()
-
-
-def main(argv):
-    options = DiscovererOptions()
-    args = options.parse_args(argv)
-    # Read the config file
-    config = Config(args)
-    discoverer = Discoverer(config, args)
-    discoverer.start()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
