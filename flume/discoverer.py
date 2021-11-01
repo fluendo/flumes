@@ -42,7 +42,10 @@ class Discoverer(object):
         # TODO Set the logging level
 
         # Start analyzing the provided media path
-        path = Gio.File.new_for_path(self.config.get_media_files_directory())
+        self.path = Gio.File.new_for_path(self.config.get_media_files_directory())
+        # Add a monitor
+        self.monitor = self.path.monitor_directory(0, None)
+        self.monitor.connect("changed", self.on_changed)
         self.discoverer = GstPbutils.Discoverer.new(5 * Gst.SECOND)
         self.discoverer.connect("discovered", self.on_discovered)
         self.discoverer.connect("finished", self.on_finished)
@@ -50,7 +53,7 @@ class Discoverer(object):
         self.discoverer.start()
         # Iterate over the files in the directory
         self.numdirs = 1
-        path.enumerate_children_async(
+        self.path.enumerate_children_async(
             "*",
             Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
             0,
@@ -58,6 +61,43 @@ class Discoverer(object):
             self.on_directory_content,
             None,
         )
+
+    def rel_path(self, path):
+        rel_path = os.path.relpath(path, self.path.get_path())
+        (dirname, basename) = os.path.split(rel_path)
+        return (dirname, basename)
+
+    def discover_file(self, path, mtime):
+        (dirname, basename) = self.rel_path(path)
+        (exists, needs_update) = self.file_stat(basename, dirname, mtime)
+        if not exists:
+            # Fill the File information
+            self.add_file(basename, dirname, mtime)
+        if needs_update:
+            # Start discovering
+            uri = "file://{}".format(path)
+            logger.debug(
+                "Discovering {} (numdiscovery: {})".format(uri, self.numdiscovery)
+            )
+            self.numdiscovery += 1
+            self.discoverer.discover_uri_async(uri)
+
+    def on_changed(self, monitor, f, of, event_type):
+        logger.debug(
+            "A change of type {} happened in the media directory".format(event_type)
+        )
+        if event_type == Gio.FileMonitorEvent.CREATED:
+            logger.debug("File {} created".format(f.get_path()))
+            finfo = f.query_info(Gio.FILE_ATTRIBUTE_TIME_MODIFIED, 0, None)
+            mtime = dateutil.parser.parse(
+                finfo.get_modification_date_time().format_iso8601()
+            )
+            self.discover_file(f.get_path(), mtime)
+        elif event_type == Gio.FileMonitorEvent.DELETED:
+            logger.debug("File {} deleted".format(f.get_path()))
+            (dirname, basename) = self.rel_path(f.get_path())
+            db_file = self.get_file(basename, dirname)
+            self.session.delete(db_file)
 
     def discovery_done(self):
         self.numdiscovery -= 1
@@ -104,7 +144,8 @@ class Discoverer(object):
             self.session.add(db_field)
             return True
 
-        # FIXME we need python3-gst-1.0 package to be installed in the virtualenv for unknown types (overrides)
+        # FIXME we need python3-gst-1.0 package to be installed in the virtualenv for
+        # unknown types (overrides)
         found = importlib.util.find_spec("gi.overrides.Gst")
         if found:
             s.foreach(store_field, None)
@@ -141,7 +182,7 @@ class Discoverer(object):
             for s in sinfo.get_streams():
                 self.store_stream_info(db_info, s)
 
-    def on_discovered(self, discoverer, info, error, *user_data):
+    def on_discovered(self, discoverer, info, error):
         logger.debug("Discovered {}".format(info.get_uri()))
         if not info:
             self.discovery_done()
@@ -151,8 +192,7 @@ class Discoverer(object):
             logger.error("With error {}".format(error))
 
         path = urlparse(info.get_uri()).path
-        rel_path = os.path.relpath(path, self.config.get_media_files_directory())
-        (dirname, basename) = os.path.split(rel_path)
+        (dirname, basename) = self.rel_path(path)
 
         result = info.get_result()
         db_file = self.get_file(basename, dirname)
@@ -180,7 +220,7 @@ class Discoverer(object):
         self.session.commit()
         self.discovery_done()
 
-    def on_finished(self, discoverer, *user_data):
+    def on_finished(self, discoverer):
         logger.debug("Finished")
 
     def on_file_found(self, enum, res, user_data):
@@ -193,7 +233,7 @@ class Discoverer(object):
             file_type = f.get_file_type()
             if file_type == Gio.FileType.DIRECTORY:
                 # recurse
-                path = "{}/{}".format(enum.get_container().get_path(), f.get_name())
+                path = os.path.join(enum.get_container().get_path(), f.get_name())
                 subdir = Gio.File.new_for_path(path)
                 logger.debug("Recursing {} (numdirs: {})".format(path, self.numdirs))
                 self.numdirs += 1
@@ -206,28 +246,12 @@ class Discoverer(object):
                     None,
                 )
             elif file_type == Gio.FileType.REGULAR:
-                path = "{}/{}".format(enum.get_container().get_path(), f.get_name())
-                rel_path = os.path.relpath(
-                    path, self.config.get_media_files_directory()
-                )
-                (dirname, basename) = os.path.split(rel_path)
+                path = os.path.join(enum.get_container().get_path(), f.get_name())
                 mtime = dateutil.parser.parse(
                     f.get_modification_date_time().format_iso8601()
                 )
-                (exists, needs_update) = self.file_stat(basename, dirname, mtime)
-                if not exists:
-                    # Fill the File information
-                    self.add_file(basename, dirname, mtime)
-                if needs_update:
-                    # Start discovering
-                    uri = "file://{}".format(path)
-                    logger.debug(
-                        "Discovering {} (numdiscovery: {})".format(
-                            uri, self.numdiscovery
-                        )
-                    )
-                    self.numdiscovery += 1
-                    self.discoverer.discover_uri_async(uri)
+                self.discover_file(path, mtime)
+
         enum.next_files_async(1, 0, None, self.on_file_found, None)
 
     def on_directory_content(self, path, res, user_data):
