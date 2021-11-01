@@ -1,6 +1,8 @@
 import configparser
 import os
 
+from sqlalchemy.engine import URL, make_url
+
 
 class ConfigError(Exception):
     pass
@@ -33,17 +35,48 @@ class Config(object):
                 self.config["Media"]["dir"] = args.dir
             if args.uri:
                 self.config["Database"]["uri"] = args.uri
+            if args.driver:
+                self.config["Database"]["driver"] = args.driver
             if args.user:
                 self.config["Database"]["user"] = args.user
             if args.password:
                 self.config["Database"]["password"] = args.password
+            if args.host:
+                self.config["Database"]["host"] = args.host
+            if args.port:
+                self.config["Database"]["port"] = args.port
+            if args.database:
+                self.config["Database"]["database"] = args.database
+
+        # Generate the other parameters based on the uri
+        if "uri" in self.config["Database"]:
+            url = make_url(self.config["Database"]["uri"])
+            if not "driver" in self.config["Database"] and url.drivername:
+                self.config["Database"]["driver"] = url.drivername
+            if not "user" in self.config["Database"] and url.username:
+                self.config["Database"]["user"] = url.username
+            if not "password" in self.config["Database"] and url.password:
+                self.config["Database"]["password"] = url.password
+            if not "host" in self.config["Database"] and url.host:
+                self.config["Database"]["host"] = url.host
+            if not "port" in self.config["Database"] and url.port:
+                self.config["Database"]["port"] = url.port
+            if not "database" in self.config["Database"] and url.database:
+                self.config["Database"]["database"] = url.database
+
+        # Generate the uri based on the other parameters
+        url = URL.create(
+            self.config["Database"]["driver"],
+            getattr(self.config["Database"], "user", None),
+            getattr(self.config["Database"], "password", None),
+            getattr(self.config["Database"], "host", None),
+            getattr(self.config["Database"], "port", None),
+            getattr(self.config["Database"], "database", None),
+        )
+        self.config["Database"]["uri"] = str(url)
 
         if not "uri" in self.config["Database"]:
             raise ConfigError("Missing database uri")
-        if not "user" in self.config["Database"]:
-            raise ConfigError("Missing database user")
-        if not "password" in self.config["Database"]:
-            raise ConfigError("Missing database password")
         if not "dir" in self.config["Media"]:
             raise ConfigError("Missing media directory")
 
@@ -53,8 +86,20 @@ class Config(object):
     def get_database_uri(self):
         return self.config["Database"]["uri"]
 
+    def get_database_diriver(self):
+        return self.config["Database"]["driver"]
+
     def get_database_user(self):
         return self.config["Database"]["user"]
 
     def get_database_password(self):
         return self.config["Database"]["password"]
+
+    def get_database_host(self):
+        return self.config["Database"]["host"]
+
+    def get_database_port(self):
+        return self.config["Database"]["port"]
+
+    def get_database_database(self):
+        return self.config["Database"]["database"]

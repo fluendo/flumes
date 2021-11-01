@@ -16,10 +16,6 @@ class Schema(object):
     def __init__(self, config):
         # Get the database configuration
         db_uri = config.get_database_uri()
-        db_user = config.get_database_user()
-        db_password = config.get_database_password()
-
-        # TODO Set the SQL server user/password if tey are separetly
         # Create, if needed, the database
         self.engine = create_engine(db_uri)
         # TODO Check for pending migrations
