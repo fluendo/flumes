@@ -65,16 +65,17 @@ class Config(object):
                 self.config["Database"]["database"] = url.database
 
         # Generate the uri based on the other parameters
-        url = URL.create(
+        url = URL(
             self.config["Database"]["driver"],
-            getattr(self.config["Database"], "user", None),
-            getattr(self.config["Database"], "password", None),
-            getattr(self.config["Database"], "host", None),
-            getattr(self.config["Database"], "port", None),
-            getattr(self.config["Database"], "database", None),
+            username=self.config["Database"].get("user", None),
+            password=self.config["Database"].get("password", None),
+            host=self.config["Database"].get("host", None),
+            port=self.config["Database"].get("port", None),
+            database=self.config["Database"].get("database", None),
         )
         self.config["Database"]["uri"] = str(url)
 
+        print(url)
         if not "uri" in self.config["Database"]:
             raise ConfigError("Missing database uri")
         if not "dir" in self.config["Media"]:
