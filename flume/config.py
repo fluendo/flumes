@@ -75,7 +75,6 @@ class Config(object):
         )
         self.config["Database"]["uri"] = str(url)
 
-        print(url)
         if not "uri" in self.config["Database"]:
             raise ConfigError("Missing database uri")
         if not "dir" in self.config["Media"]:
@@ -87,7 +86,7 @@ class Config(object):
     def get_database_uri(self):
         return self.config["Database"]["uri"]
 
-    def get_database_diriver(self):
+    def get_database_driver(self):
         return self.config["Database"]["driver"]
 
     def get_database_user(self):
