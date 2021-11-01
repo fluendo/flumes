@@ -1,6 +1,8 @@
 import datetime
+import importlib
 import logging
 import os
+import re
 import sys
 from datetime import timezone
 from urllib.parse import urlparse
@@ -13,7 +15,7 @@ gi.require_version("GstPbutils", "1.0")
 from gi.repository import Gio, GLib, Gst, GstPbutils
 
 from .options import Options
-from .schema import File, Info, Schema
+from .schema import Field, File, Info, Schema, Stream
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -37,7 +39,7 @@ class Discoverer(object):
         self.quit = args.quit
         schema = Schema(config)
         self.session = schema.create_session()
-        # Set the logging level
+        # TODO Set the logging level
 
         # Start analyzing the provided media path
         path = Gio.File.new_for_path(self.config.get_media_files_directory())
@@ -84,14 +86,60 @@ class Discoverer(object):
 
     def add_file(self, name, path, mtime):
         logger.debug("Adding file name={} path={} mtime={}".format(name, path, mtime))
-        f = File(name=name, path=path, mtime=mtime)
-        self.session.add(f)
+        db_file = File(name=name, path=path, mtime=mtime)
+        self.session.add(db_file)
         self.session.commit()
-        return f
+        return db_file
 
     def get_file(self, name, path):
-        f = self.session.query(File).filter_by(name=name, path=path).first()
-        return f
+        db_file = self.session.query(File).filter_by(name=name, path=path).first()
+        return db_file
+
+    def store_structure(self, db_stream, s):
+        def store_field(field_id, value, _unused):
+            # Add every GstStructure field
+            db_field = Field(stream=db_stream)
+            db_field.name = GLib.quark_to_string(field_id)
+            db_field.value = Gst.value_serialize(value)
+            self.session.add(db_field)
+            return True
+
+        # FIXME we need python3-gst-1.0 package to be installed in the virtualenv for unknown types (overrides)
+        found = importlib.util.find_spec("gi.overrides.Gst")
+        if found:
+            s.foreach(store_field, None)
+        else:
+            fields = s.to_string().split(",")
+            if len(fields) > 1:
+                regex = (
+                    r"(?P<key>\w+([-]\w+)*)\=\((?P<type>\w+)\)(?P<value>\w+([-]\w+)*)"
+                )
+                regex_c = re.compile(regex)
+                # Remove trailing semicolon
+                for field in fields[1:-1] + [fields[-1][:-1]]:
+                    groups = re.match(regex_c, field.strip())
+                    db_field = Field(stream=db_stream)
+                    db_field.name = groups.group("key")
+                    db_field.value = groups.group("value")
+                    self.session.add(db_field)
+
+    def store_stream_info(self, db_info, sinfo):
+        if not sinfo:
+            return
+
+        s = sinfo.get_caps().get_structure(0)
+        # Add the stream
+        db_stream = Stream(info=db_info)
+        db_stream.media_type = s.get_name()
+        self.session.add(db_stream)
+        self.store_structure(db_stream, s)
+
+        next_sinfo = sinfo.get_next()
+        if next_sinfo:
+            self.store_stream_info(db_info, next_sinfo)
+        elif sinfo.__gtype__.name == "GstDiscovererContainerInfo":
+            for s in sinfo.get_streams():
+                self.store_stream_info(db_info, s)
 
     def on_discovered(self, discoverer, info, error, *user_data):
         logger.debug("Discovered {}".format(info.get_uri()))
@@ -107,15 +155,27 @@ class Discoverer(object):
         (dirname, basename) = os.path.split(rel_path)
 
         result = info.get_result()
-        f = self.get_file(basename, dirname)
-        finfo = f.info
-        if not finfo:
-            finfo = Info(file=f)
-            self.session.add(finfo)
-        finfo.duration = info.get_duration()
-        finfo.live = info.get_live()
-        finfo.seekable = info.get_seekable()
-        # TODO Add the streams
+        db_file = self.get_file(basename, dirname)
+        db_info = db_file.info
+        if not db_info:
+            db_info = Info(file=db_file)
+            self.session.add(db_info)
+
+        # Common properties
+        db_info.duration = info.get_duration()
+        db_info.live = info.get_live()
+        db_info.seekable = info.get_seekable()
+        # Number of streams
+        db_info.audio_streams = len(info.get_audio_streams())
+        db_info.video_streams = len(info.get_video_streams())
+        db_info.subtitle_streams = len(info.get_subtitle_streams())
+
+        # Topology
+        # Remove every previous stream
+        db_info.streams[:] = []
+        sinfo = info.get_stream_info()
+        self.store_stream_info(db_info, sinfo)
+
         # TODO Add the tags
         self.session.commit()
         self.discovery_done()

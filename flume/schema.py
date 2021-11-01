@@ -42,6 +42,7 @@ class File(Base):
     name = Column(String)
     path = Column(String)
     mtime = Column(DateTime)
+
     info = relationship("Info", uselist=False, back_populates="file")
 
 
@@ -49,8 +50,36 @@ class Info(Base):
     __tablename__ = "infos"
     id = Column(Integer, primary_key=True)
     file_id = Column(Integer, ForeignKey("files.id"))
-    file = relationship("File", back_populates="info")
 
     duration = Column(Integer)
     seekable = Column(Boolean)
     live = Column(Boolean)
+    audio_streams = Column(Integer)
+    video_streams = Column(Integer)
+    subtitle_streams = Column(Integer)
+
+    file = relationship("File", back_populates="info")
+    streams = relationship("Stream", back_populates="info")
+
+
+class Stream(Base):
+    __tablename__ = "streams"
+    id = Column(Integer, primary_key=True)
+
+    info_id = Column(Integer, ForeignKey("infos.id"))
+    media_type = Column(String)
+
+    info = relationship("Info", back_populates="streams")
+    fields = relationship("Field", back_populates="stream")
+
+
+class Field(Base):
+    __tablename__ = "fields"
+    id = Column(Integer, primary_key=True)
+
+    stream_id = Column(Integer, ForeignKey("streams.id"))
+
+    name = Column(String)
+    value = Column(String)
+
+    stream = relationship("Stream", back_populates="fields")
