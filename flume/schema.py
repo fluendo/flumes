@@ -7,7 +7,7 @@ from sqlalchemy import (
     String,
     create_engine,
 )
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import declarative_base, declared_attr, relationship, sessionmaker
 
 Base = declarative_base()
 
@@ -64,9 +64,84 @@ class Stream(Base):
 
     info_id = Column(Integer, ForeignKey("infos.id"))
     media_type = Column(String)
+    type = Column(String)
 
     info = relationship("Info", back_populates="streams")
     fields = relationship("Field", back_populates="stream")
+
+    __mapper_args__ = {"polymorphic_identity": "stream", "polymorphic_on": type}
+
+
+class Video(Stream):
+    framerate_denom = Column(Integer)
+    framerate_num = Column(Integer)
+    height = Column(Integer)
+    par_denom = Column(Integer)
+    par_num = Column(Integer)
+    width = Column(Integer)
+    is_image = Column(Boolean)
+    is_interlaced = Column(Boolean)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "video",
+    }
+
+    # Common columns found in other stream types
+    @declared_attr
+    def bitrate(cls):
+        return Stream.__table__.c.get("bitrate", Column(Integer))
+
+    @declared_attr
+    def max_bitrate(cls):
+        return Stream.__table__.c.get("max_bitrate", Column(Integer))
+
+    @declared_attr
+    def depth(cls):
+        return Stream.__table__.c.get("depth", Column(Integer))
+
+
+class Audio(Stream):
+    channel_mask = Column(Integer)
+    channels = Column(Integer)
+    sample_rate = Column(Integer)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "audio",
+    }
+
+    # Common columns found in other stream types
+    @declared_attr
+    def bitrate(cls):
+        return Stream.__table__.c.get("bitrate", Column(Integer))
+
+    @declared_attr
+    def max_bitrate(cls):
+        return Stream.__table__.c.get("max_bitrate", Column(Integer))
+
+    @declared_attr
+    def depth(cls):
+        return Stream.__table__.c.get("depth", Column(Integer))
+
+    @declared_attr
+    def language(cls):
+        return Stream.__table__.c.get("language", Column(String))
+
+
+class Subtitle(Stream):
+    __mapper_args__ = {
+        "polymorphic_identity": "subtitle",
+    }
+
+    # Common columns found in other stream types
+    @declared_attr
+    def language(cls):
+        return Stream.__table__.c.get("language", Column(String))
+
+
+class Container(Stream):
+    __mapper_args__ = {
+        "polymorphic_identity": "container",
+    }
 
 
 class Field(Base):

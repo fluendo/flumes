@@ -15,7 +15,7 @@ gi.require_version("GstPbutils", "1.0")
 from gi.repository import Gio, GLib, Gst, GstPbutils
 
 from .options import Options
-from .schema import Field, File, Info, Schema, Stream
+from .schema import Audio, Container, Field, File, Info, Schema, Stream, Subtitle, Video
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -145,7 +145,7 @@ class Discoverer(object):
             return True
 
         # FIXME we need python3-gst-1.0 package to be installed in the virtualenv for
-        # unknown types (overrides)
+        # unknown types (overrides). Sadly there is no pip package for it.
         found = importlib.util.find_spec("gi.overrides.Gst")
         if found:
             s.foreach(store_field, None)
@@ -170,7 +170,34 @@ class Discoverer(object):
 
         s = sinfo.get_caps().get_structure(0)
         # Add the stream
-        db_stream = Stream(info=db_info)
+        if sinfo.__gtype__.name == "GstDiscovererContainerInfo":
+            db_stream = Container(info=db_info)
+        elif sinfo.__gtype__.name == "GstDiscovererVideoInfo":
+            db_stream = Video(info=db_info)
+            db_stream.bitrate = sinfo.get_bitrate()
+            db_stream.depth = sinfo.get_depth()
+            db_stream.framerate_denom = sinfo.get_framerate_denom()
+            db_stream.framerate_num = sinfo.get_framerate_num()
+            db_stream.height = sinfo.get_height()
+            db_stream.max_bitrate = sinfo.get_max_bitrate()
+            db_stream.par_denom = sinfo.get_par_denom()
+            db_stream.par_num = sinfo.get_par_num()
+            db_stream.width = sinfo.get_width()
+            db_stream.is_image = sinfo.is_image()
+            db_stream.is_interlaced = sinfo.is_interlaced()
+        elif sinfo.__gtype__.name == "GstDiscovererAudioInfo":
+            db_stream = Audio(info=db_info)
+            db_stream.channel_mask = sinfo.get_channel_mask()
+            db_stream.channels = sinfo.get_channels()
+            db_stream.sample_rate = sinfo.get_sample_rate()
+            db_stream.bitrate = sinfo.get_bitrate()
+            db_stream.max_bitrate = sinfo.get_max_bitrate()
+            db_stream.sample_rate = sinfo.get_sample_rate()
+            db_stream.depth = sinfo.get_depth()
+            db_stream.language = sinfo.get_language()
+        elif sinfo.__gtype__.name == "GstDiscovererSubtitleInfo":
+            db_stream = Subtitle(info=db_info)
+            db_stream.language = sinfo.get_language()
         db_stream.media_type = s.get_name()
         self.session.add(db_stream)
         self.store_structure(db_stream, s)
