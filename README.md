@@ -8,7 +8,7 @@ Besides the dependencies of the package itself, your system needs to have:
 * gstreamer-1.0
 
 ## Usage
-You need to provide a configuration on either `$HOME/.flume` or a system wide configuration at `/etc/flume`. The database parameters are modeled in the same way as `SQLAlchmey` URL parameters.
+You need to provide a configuration on either `$HOME/.flume` or a system wide configuration at `/etc/flume`. The database parameters are modeled in the same way as `SQLAlchemy` URL parameters.
 
 Sample configuration for sqlite3 database driver
 ```ini
