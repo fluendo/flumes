@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import sys
+
 from flume.config import Config
 from flume.discoverer import Discoverer, DiscovererOptions
 
