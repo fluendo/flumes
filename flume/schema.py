@@ -61,6 +61,7 @@ class Info(Base):
 class Stream(Base):
     __tablename__ = "streams"
     id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer, ForeignKey("streams.id"))
 
     info_id = Column(Integer, ForeignKey("infos.id"))
     media_type = Column(String)
@@ -68,6 +69,7 @@ class Stream(Base):
 
     info = relationship("Info", back_populates="streams")
     fields = relationship("Field", back_populates="stream")
+    children = relationship("Stream")
 
     __mapper_args__ = {"polymorphic_identity": "stream", "polymorphic_on": type}
 

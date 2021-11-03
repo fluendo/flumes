@@ -49,7 +49,7 @@ class Discoverer(object):
         self.discoverer = GstPbutils.Discoverer.new(5 * Gst.SECOND)
         self.discoverer.connect("discovered", self.on_discovered)
         self.discoverer.connect("finished", self.on_finished)
-        self.numdiscovery = 0
+        self.numdiscoveries = 0
         self.discoverer.start()
         # Iterate over the files in the directory
         self.numdirs = 1
@@ -77,9 +77,9 @@ class Discoverer(object):
             # Start discovering
             uri = "file://{}".format(path)
             logger.debug(
-                "Discovering {} (numdiscovery: {})".format(uri, self.numdiscovery)
+                "Discovering {} (numdiscoveries: {})".format(uri, self.numdiscoveries)
             )
-            self.numdiscovery += 1
+            self.numdiscoveries += 1
             self.discoverer.discover_uri_async(uri)
 
     def on_changed(self, monitor, f, of, event_type):
@@ -100,8 +100,8 @@ class Discoverer(object):
             self.session.delete(db_file)
 
     def discovery_done(self):
-        self.numdiscovery -= 1
-        if not self.numdirs:
+        self.numdiscoveries -= 1
+        if not self.numdiscoveries:
             logger.debug("No more discoveries")
         self.check_quit()
 
@@ -112,7 +112,7 @@ class Discoverer(object):
         self.check_quit()
 
     def check_quit(self):
-        if not self.numdirs and not self.numdiscovery and self.quit:
+        if not self.numdirs and not self.numdiscoveries and self.quit:
             self.stop()
 
     def file_stat(self, name, path, mtime):
@@ -164,11 +164,10 @@ class Discoverer(object):
                     db_field.value = groups.group("value")
                     self.session.add(db_field)
 
-    def store_stream_info(self, db_info, sinfo):
+    def store_stream_info(self, db_info, sinfo, parent=None):
         if not sinfo:
             return
 
-        s = sinfo.get_caps().get_structure(0)
         # Add the stream
         if sinfo.__gtype__.name == "GstDiscovererContainerInfo":
             db_stream = Container(info=db_info)
@@ -198,8 +197,16 @@ class Discoverer(object):
         elif sinfo.__gtype__.name == "GstDiscovererSubtitleInfo":
             db_stream = Subtitle(info=db_info)
             db_stream.language = sinfo.get_language()
+        elif sinfo.__gtype__.name == "GstDiscovererStreamInfo":
+            db_stream = Stream(info=db_info)
+
+        # Common fields
+        if parent:
+            parent.children.append(db_stream)
+        s = sinfo.get_caps().get_structure(0)
         db_stream.media_type = s.get_name()
         self.session.add(db_stream)
+        # Now the fields
         self.store_structure(db_stream, s)
 
         next_sinfo = sinfo.get_next()
@@ -207,7 +214,7 @@ class Discoverer(object):
             self.store_stream_info(db_info, next_sinfo)
         elif sinfo.__gtype__.name == "GstDiscovererContainerInfo":
             for s in sinfo.get_streams():
-                self.store_stream_info(db_info, s)
+                self.store_stream_info(db_info, s, db_stream)
 
     def on_discovered(self, discoverer, info, error):
         logger.debug("Discovered {}".format(info.get_uri()))
