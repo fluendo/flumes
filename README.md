@@ -1,11 +1,20 @@
-# Flume: Media indexing
+# flume
+Media scanner and indexer for your media files.
+
+## Installation
+
+## System dependencies
+Besides the dependencies of the package itself, your system needs to have:
+* gstreamer-1.0
+
 ## Usage
-Sample configuration
-```
+You need to provide a configuration on either `$HOME/.flume` or a system wide configuration at `/etc/flume`. The database parameters are modeled in the same way as `SQLAlchmey` URL parameters.
+
+Sample configuration for sqlite3 database driver
+```ini
 [Database]
 uri=sqlite:///flume.db
-user=user
-password=password
+
 [Media]
 dir=/home/user/Videos
 ```
@@ -19,7 +28,9 @@ Install dependencies
 ```
 poetry install
 ```
-Pre-commit hooks
+Install pre-commit hooks
 ```
 poetry run pre-commit install
 ```
+
+## License
