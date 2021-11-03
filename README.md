@@ -1,6 +1,10 @@
 # flume
 Media scanner and indexer for your media files.
 
+## Features
+* Re-scan after media directory changes
+* Stores the `GstDiscoveryStream` information and the `GstCaps` strcuture fields
+
 ## Installation
 
 ## System dependencies
