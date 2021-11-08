@@ -12,7 +12,7 @@ class Options(ArgumentParser):
         )
         group = self.add_argument_group("database")
         group.add_argument("-i", "--uri", action="store", help="database uri")
-        group.add_argument("-e", "--driver", action="store", help="database driver")
+        group.add_argument("-e", "--drivername", action="store", help="database driver")
         group.add_argument("-u", "--user", action="store", help="database user name")
         group.add_argument(
             "-p", "--password", action="store", help="database user password"

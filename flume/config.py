@@ -10,6 +10,16 @@ class ConfigError(Exception):
 
 class Config(object):
     SYSTEM_CONFIG = "/etc/flume"
+    conf_database_args = [
+        "uri",
+        "drivername",
+        "user",
+        "password",
+        "host",
+        "port",
+        "database",
+    ]
+    conf_media_args = ["dir"]
 
     def __init__(self, args=None):
         user_configuration = "{}/{}".format(os.getenv("HOME"), ".flume")
@@ -31,41 +41,29 @@ class Config(object):
             self.config["Media"] = {}
 
         if args:
-            if args.dir:
-                self.config["Media"]["dir"] = args.dir
-            if args.uri:
-                self.config["Database"]["uri"] = args.uri
-            if args.driver:
-                self.config["Database"]["driver"] = args.driver
-            if args.user:
-                self.config["Database"]["user"] = args.user
-            if args.password:
-                self.config["Database"]["password"] = args.password
-            if args.host:
-                self.config["Database"]["host"] = args.host
-            if args.port:
-                self.config["Database"]["port"] = args.port
-            if args.database:
-                self.config["Database"]["database"] = args.database
+            for c in self.conf_media_args:
+                cv = getattr(args, c, None)
+                if cv:
+                    self.config["Media"][c] = cv
+            for c in self.conf_database_args:
+                cv = getattr(args, c, None)
+                if cv:
+                    self.config["Database"][c] = cv
 
         # Generate the other parameters based on the uri
         if "uri" in self.config["Database"]:
             url = make_url(self.config["Database"]["uri"])
-            if not "driver" in self.config["Database"] and url.drivername:
-                self.config["Database"]["driver"] = url.drivername
-            if not "user" in self.config["Database"] and url.username:
-                self.config["Database"]["user"] = url.username
-            if not "password" in self.config["Database"] and url.password:
-                self.config["Database"]["password"] = url.password
-            if not "host" in self.config["Database"] and url.host:
-                self.config["Database"]["host"] = url.host
-            if not "port" in self.config["Database"] and url.port:
-                self.config["Database"]["port"] = url.port
-            if not "database" in self.config["Database"] and url.database:
-                self.config["Database"]["database"] = url.database
+            for c in self.conf_database_args:
+                if c == "uri":
+                    continue
+                cv = getattr(url, c, None)
+                if cv:
+                    self.config["Database"][c] = cv
+                elif c in self.config["Database"]:
+                    del self.config["Database"][c]
 
         # Generate the uri based on the other parameters
-        url = URL(
+        url = URL.create(
             self.config["Database"]["driver"],
             username=self.config["Database"].get("user", None),
             password=self.config["Database"].get("password", None),

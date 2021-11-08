@@ -4,16 +4,22 @@ from flume.discoverer import Discoverer, DiscovererOptions
 
 
 def test_version():
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.1.1"
 
 
-def test_discovery():
-    # Create an sqlite based dicovery with the media at samples dir
+def test_config():
+    # Check URI has higher priority
     options = DiscovererOptions()
     args = options.parse_args(
         [
             "-i",
-            "sqlite:///flume.db",
+            "sqlite:///flume-test.db",
+        ]
+    )
+    config = Config(args)
+    assert config.get_database_database() == "flume-test.db"
+    args = options.parse_args(
+        [
             "-d",
             "tests/samples",
             "-u",
@@ -24,6 +30,3 @@ def test_discovery():
         ]
     )
     config = Config(args)
-    discoverer = Discoverer(config, args)
-    discoverer.start()
-    # Check the correct information is stored in the database
