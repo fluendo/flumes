@@ -14,6 +14,7 @@ Base = declarative_base()
 
 class Schema(object):
     def __init__(self, config):
+        self.config = config
         # Get the database configuration
         db_uri = config.get_database_uri()
         # Create, if needed, the database
@@ -21,6 +22,9 @@ class Schema(object):
         # TODO Check for pending migrations
         Base.metadata.create_all(self.engine)
         self.sessionmaker = sessionmaker(bind=self.engine)
+
+    def get_config(self):
+        return self.config
 
     def create_session(self):
         return self.sessionmaker()
