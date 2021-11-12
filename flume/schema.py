@@ -31,7 +31,7 @@ class Schema(object):
 
 
 class Meta(Base):
-    __tablename__ = "meta"
+    __tablename__ = "metas"
     id = Column(Integer, primary_key=True)
     version = Column(String)
     root = Column(String)
