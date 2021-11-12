@@ -6,10 +6,6 @@ class Options(ArgumentParser):
         super().__init__(*args, **kwargs)
         group = self.add_argument_group("configuration file")
         group.add_argument("-c", "--config", action="store", help="configuration file")
-        group = self.add_argument_group("media files")
-        group.add_argument(
-            "-d", "--dir", action="store", help="media content directory"
-        )
         group = self.add_argument_group("database")
         group.add_argument("-i", "--uri", action="store", help="database uri")
         group.add_argument("-e", "--drivername", action="store", help="database driver")

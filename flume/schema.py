@@ -30,6 +30,13 @@ class Schema(object):
         return self.sessionmaker()
 
 
+class Meta(Base):
+    __tablename__ = "meta"
+    id = Column(Integer, primary_key=True)
+    version = Column(String)
+    root = Column(String)
+
+
 class File(Base):
     __tablename__ = "files"
     id = Column(Integer, primary_key=True)

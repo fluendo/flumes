@@ -19,7 +19,6 @@ class Config(object):
         "port",
         "database",
     ]
-    conf_media_args = ["dir"]
 
     def __init__(self, args=None):
         user_configuration = "{}/{}".format(os.getenv("HOME"), ".flume")
@@ -37,14 +36,8 @@ class Config(object):
         # override now with passed in arguments
         if not "Database" in self.config:
             self.config["Database"] = {}
-        if not "Media" in self.config:
-            self.config["Media"] = {}
 
         if args:
-            for c in self.conf_media_args:
-                cv = getattr(args, c, None)
-                if cv:
-                    self.config["Media"][c] = cv
             for c in self.conf_database_args:
                 cv = getattr(args, c, None)
                 if cv:
@@ -75,11 +68,6 @@ class Config(object):
 
         if not "uri" in self.config["Database"]:
             raise ConfigError("Missing database uri")
-        if not "dir" in self.config["Media"]:
-            raise ConfigError("Missing media directory")
-
-    def get_media_files_directory(self):
-        return self.config["Media"]["dir"]
 
     def get_database_uri(self):
         return self.config["Database"]["uri"]

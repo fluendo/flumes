@@ -14,8 +14,20 @@ gi.require_version("Gst", "1.0")
 gi.require_version("GstPbutils", "1.0")
 from gi.repository import Gio, GLib, Gst, GstPbutils
 
+from . import __version__
 from .options import Options
-from .schema import Audio, Container, Field, File, Info, Schema, Stream, Subtitle, Video
+from .schema import (
+    Audio,
+    Container,
+    Field,
+    File,
+    Info,
+    Meta,
+    Schema,
+    Stream,
+    Subtitle,
+    Video,
+)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -28,6 +40,9 @@ class DiscovererOptions(Options):
         group.add_argument(
             "-q", "--quit", action="store_true", default=False, help="Quit after scan"
         )
+        group.add_argument(
+            "-d", "--dir", action="store", help="media content directory"
+        )
 
 
 class Discoverer(object):
@@ -37,12 +52,21 @@ class Discoverer(object):
         self.config = config
         self.loop = GLib.MainLoop()
         self.quit = args.quit
+        self.dir = args.dir
         schema = Schema(config)
         self.session = schema.create_session()
         # TODO Set the logging level
-
+        # Write down the Meta table
+        meta = self.session.query(Meta).one_or_none()
+        if not meta:
+            meta = Meta()
+            meta.version = __version__
+            meta.root = self.dir
+            self.session.add(meta)
+            self.session.commit()
+        # TODO Check in case we have provided a different folder
         # Start analyzing the provided media path
-        self.path = Gio.File.new_for_path(self.config.get_media_files_directory())
+        self.path = Gio.File.new_for_path(self.dir)
         # Add a monitor
         self.monitor = self.path.monitor_directory(0, None)
         self.monitor.connect("changed", self.on_changed)
