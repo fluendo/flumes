@@ -25,12 +25,6 @@ class Schema(object):
     def create_session(self):
         return self.sessionmaker()
 
-    def get_structs(self):
-        return ["file", "info"]
-
-    def get_structs_cls(self):
-        return [File, Info]
-
 
 class File(Base):
     __tablename__ = "files"
