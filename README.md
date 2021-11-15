@@ -18,9 +18,6 @@ Sample configuration for sqlite3 database driver
 ```ini
 [Database]
 uri=sqlite:///flume.db
-
-[Media]
-dir=/home/user/Videos
 ```
 
 ## Development
@@ -36,5 +33,3 @@ Install pre-commit hooks
 ```
 poetry run pre-commit install
 ```
-
-## License
