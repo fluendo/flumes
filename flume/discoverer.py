@@ -15,6 +15,7 @@ gi.require_version("GstPbutils", "1.0")
 from gi.repository import Gio, GLib, Gst, GstPbutils
 
 from . import __version__
+from .config import Config
 from .options import Options
 from .schema import (
     Audio,
@@ -322,3 +323,12 @@ class Discoverer(object):
     def stop(self):
         self.discoverer.stop()
         self.loop.quit()
+
+
+def run():
+    options = DiscovererOptions()
+    args = options.parse_args()
+    # Read the config file
+    config = Config(args)
+    discoverer = Discoverer(config, args)
+    discoverer.start()

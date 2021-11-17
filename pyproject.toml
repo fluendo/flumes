@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flume"
-version = "0.1.0"
+version = "0.1.3"
 description = ""
 authors = ["Jorge Zapata <jorgeluis.zapata@gmail.com>"]
 
@@ -17,7 +17,7 @@ black = "^21.9b0"
 isort = "^5.9.3"
 
 [tool.poetry.scripts]
-flume-discovery = "bin.flume_discovery:main"
+flume-discovery = "flume.discoverer:run"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
