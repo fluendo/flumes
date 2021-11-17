@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  testing:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install Poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry
+
+    - name: Check format
+      run: |
+        python -m poetry run isort .
+        python -m poetry run black .
+    
+    - name: Test with pytest
+      run: python -m poetry run pytest
