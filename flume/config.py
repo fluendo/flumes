@@ -55,6 +55,9 @@ class Config(object):
                 elif c in self.config["Database"]:
                     del self.config["Database"][c]
 
+        if not "drivername" in self.config["Database"]:
+            raise ConfigError("Missing drivername")
+
         # Generate the uri based on the other parameters
         url = URL.create(
             self.config["Database"]["drivername"],

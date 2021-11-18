@@ -20,13 +20,19 @@ def test_config():
     assert config.get_database_database() == "flume-test.db"
     args = options.parse_args(
         [
-            "-d",
-            "tests/samples",
+            "-e",
+            "sqlite",
             "-u",
             "jl",
             "-p",
             "foo",
+            "-b",
+            "/",
             "-q",
         ]
     )
     config = Config(args)
+    assert config.get_database_driver() == "sqlite"
+    assert config.get_database_user() == "jl"
+    assert config.get_database_password() == "foo"
+    assert config.get_database_uri() == "sqlite://jl:foo@//"
