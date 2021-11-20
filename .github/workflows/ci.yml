@@ -18,7 +18,8 @@ jobs:
         python-version: [3.9]
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
 
     - name: Install system dependencies
       run: sudo apt-get install -y libgirepository1.0-dev libgstreamer-plugins-base1.0-dev
