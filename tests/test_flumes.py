@@ -1,6 +1,6 @@
-from flume import __version__
-from flume.config import Config
-from flume.discoverer import Discoverer, DiscovererOptions
+from flumes import __version__
+from flumes.config import Config
+from flumes.discoverer import Discoverer, DiscovererOptions
 
 
 def test_version():
@@ -13,11 +13,11 @@ def test_config():
     args = options.parse_args(
         [
             "-i",
-            "sqlite:///flume-test.db",
+            "sqlite:///flumes-test.db",
         ]
     )
     config = Config(args)
-    assert config.get_database_database() == "flume-test.db"
+    assert config.get_database_database() == "flumes-test.db"
     args = options.parse_args(
         [
             "-e",

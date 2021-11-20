@@ -9,7 +9,7 @@ class ConfigError(Exception):
 
 
 class Config(object):
-    SYSTEM_CONFIG = "/etc/flume"
+    SYSTEM_CONFIG = "/etc/flumes"
     conf_database_args = [
         "uri",
         "drivername",
@@ -21,7 +21,7 @@ class Config(object):
     ]
 
     def __init__(self, args=None):
-        user_configuration = "{}/{}".format(os.getenv("HOME"), ".flume")
+        user_configuration = "{}/{}".format(os.getenv("HOME"), ".flumes")
         self.config = configparser.ConfigParser()
         # try with the passed in configuration, if any
         if args and args.config:
