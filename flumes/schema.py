@@ -1,3 +1,8 @@
+import os
+
+from alembic import command
+from alembic.config import Config
+from packaging.version import Version
 from sqlalchemy import (
     Boolean,
     Column,
@@ -6,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     create_engine,
+    inspect,
 )
 from sqlalchemy.orm import declarative_base, declared_attr, relationship, sessionmaker
 
@@ -19,9 +25,27 @@ class Schema(object):
         db_uri = config.get_database_uri()
         # Create, if needed, the database
         self.engine = create_engine(db_uri)
-        # TODO Check for pending migrations
-        Base.metadata.create_all(self.engine)
         self.sessionmaker = sessionmaker(bind=self.engine)
+        self.migrate(db_uri)
+
+    def migrate(self, db_uri):
+        config = Config()
+        cwd = os.path.abspath(os.path.dirname(__file__))
+        config.set_main_option("script_location", os.path.join(cwd, "alembic"))
+        config.set_main_option("sqlalchemy.url", db_uri)
+
+        inspector = inspect(self.engine)
+        tables = inspector.get_table_names()
+        # Check if the table exists
+        if "metas" in tables:
+            session = self.create_session()
+            meta = session.query(Meta).one_or_none()
+            # Check the version in Meta
+            # If version < 0.1.5, then stamp to e827c1336bb4
+            if meta and Version(meta.version) < Version("0.1.4"):
+                command.stamp(config, "e827c1336bb4")
+        # Let alembic migrate to head, if needed
+        command.upgrade(config, "head")
 
     def get_config(self):
         return self.config
