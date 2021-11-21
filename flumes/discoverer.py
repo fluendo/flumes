@@ -64,7 +64,9 @@ class Discoverer(object):
             meta.version = __version__
             meta.root = self.dir
             self.session.add(meta)
-            self.session.commit()
+        else:
+            meta.version = __version__
+        self.session.commit()
         # TODO Check in case we have provided a different folder
         # Start analyzing the provided media path
         self.path = Gio.File.new_for_path(self.dir)
