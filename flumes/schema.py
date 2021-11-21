@@ -42,7 +42,7 @@ class Schema(object):
             meta = session.query(Meta).one_or_none()
             # Check the version in Meta
             # If version < 0.1.5, then stamp to e827c1336bb4
-            if meta and Version(meta.version) < Version("0.1.4"):
+            if meta and Version(meta.version) < Version("0.1.5"):
                 command.stamp(config, "e827c1336bb4")
         # Let alembic migrate to head, if needed
         command.upgrade(config, "head")
