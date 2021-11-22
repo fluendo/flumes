@@ -125,6 +125,7 @@ class Stream(Base):
     fields = relationship(
         "Field", back_populates="stream", cascade="all, delete-orphan"
     )
+    tags = relationship("Tag", back_populates="stream", cascade="all, delete-orphan")
     children = relationship("Stream", cascade="all, delete-orphan")
 
     __mapper_args__ = {"polymorphic_identity": "stream", "polymorphic_on": type}
@@ -212,3 +213,15 @@ class Field(Base):
     value = Column(String)
 
     stream = relationship("Stream", back_populates="fields")
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+    id = Column(Integer, primary_key=True)
+
+    stream_id = Column(Integer, ForeignKey("streams.id", ondelete="CASCADE"))
+
+    name = Column(String)
+    value = Column(String)
+
+    stream = relationship("Stream", back_populates="tags")

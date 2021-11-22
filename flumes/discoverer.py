@@ -27,6 +27,7 @@ from .schema import (
     Schema,
     Stream,
     Subtitle,
+    Tag,
     Video,
 )
 
@@ -92,6 +93,25 @@ class Discoverer(object):
             self.on_directory_content,
             None,
         )
+
+    def _has_gst_override(self):
+        # FIXME we need python3-gst-1.0 package to be installed in the virtualenv for
+        # unknown types (overrides). Sadly there is no pip package for it.
+        spec = importlib.util.find_spec("gi.overrides.Gst")
+        if spec:
+            return True
+        else:
+            return False
+
+    def _parse_type_value(self, s):
+        fields = s.split(",")
+        if len(fields) > 1:
+            regex = r"(?P<key>[\w-]*)\=\((?P<type>\w+)\)[\"]?(?P<value>[\w -\\]*)[\"]?"
+            regex_c = re.compile(regex)
+            # Remove trailing semicolon
+            for field in fields[1:-1] + [fields[-1][:-1]]:
+                groups = re.match(regex_c, field.strip())
+                yield (groups.group("key"), groups.group("type"), groups.group("value"))
 
     def rel_path(self, path):
         rel_path = os.path.relpath(path, self.path.get_path())
@@ -166,6 +186,25 @@ class Discoverer(object):
         db_file = self.session.query(File).filter_by(name=name, path=path).first()
         return db_file
 
+    def store_stream_tags(self, db_stream, tags):
+        def store_tag(tl, tag, *user_data):
+            (copied, value) = Gst.TagList.copy_value(tl, tag)
+            if copied:
+                db_tag = Tag(stream=db_stream)
+                db_tag.name = tag
+                db_tag.value = Gst.value_serialize(value)
+                self.session.add(db_tag)
+
+        found = self._has_gst_override()
+        if found:
+            tags.foreach(store_tag, None)
+        else:
+            for (key, t, value) in self._parse_type_value(tags.to_string()):
+                db_tag = Tag(stream=db_stream)
+                db_tag.name = key
+                db_tag.value = value
+                self.session.add(db_tag)
+
     def store_structure(self, db_stream, s):
         def store_field(field_id, value, _unused):
             # Add every GstStructure field
@@ -175,25 +214,15 @@ class Discoverer(object):
             self.session.add(db_field)
             return True
 
-        # FIXME we need python3-gst-1.0 package to be installed in the virtualenv for
-        # unknown types (overrides). Sadly there is no pip package for it.
-        found = importlib.util.find_spec("gi.overrides.Gst")
+        found = self._has_gst_override()
         if found:
             s.foreach(store_field, None)
         else:
-            fields = s.to_string().split(",")
-            if len(fields) > 1:
-                regex = (
-                    r"(?P<key>\w+([-]\w+)*)\=\((?P<type>\w+)\)(?P<value>\w+([-]\w+)*)"
-                )
-                regex_c = re.compile(regex)
-                # Remove trailing semicolon
-                for field in fields[1:-1] + [fields[-1][:-1]]:
-                    groups = re.match(regex_c, field.strip())
-                    db_field = Field(stream=db_stream)
-                    db_field.name = groups.group("key")
-                    db_field.value = groups.group("value")
-                    self.session.add(db_field)
+            for (key, t, value) in self._parse_type_value(s.to_string()):
+                db_field = Field(stream=db_stream)
+                db_field.name = key
+                db_field.value = value
+                self.session.add(db_field)
 
     def store_stream_info(self, db_info, sinfo, parent=None):
         if not sinfo:
@@ -240,6 +269,11 @@ class Discoverer(object):
         # Now the fields
         self.store_structure(db_stream, s)
 
+        # Now the tags
+        tags = sinfo.get_tags()
+        if tags:
+            self.store_stream_tags(db_stream, tags)
+
         next_sinfo = sinfo.get_next()
         if next_sinfo:
             self.store_stream_info(db_info, next_sinfo)
@@ -277,11 +311,13 @@ class Discoverer(object):
 
         # Topology
         # Remove every previous stream
-        db_info.streams[:] = []
+        self.session.query(Stream).filter(Stream.info_id == db_info.id).delete()
+        self.session.commit()
+
         sinfo = info.get_stream_info()
         self.store_stream_info(db_info, sinfo)
 
-        # TODO Add the tags
+        # Finally commit
         self.session.commit()
         self.discovery_done()
 
