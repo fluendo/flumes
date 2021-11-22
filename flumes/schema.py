@@ -1,4 +1,5 @@
 import os
+from sqlite3 import Connection as SQLite3Connection
 
 from alembic import command
 from alembic.config import Config
@@ -11,11 +12,21 @@ from sqlalchemy import (
     Integer,
     String,
     create_engine,
+    event,
     inspect,
 )
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base, declared_attr, relationship, sessionmaker
 
 Base = declarative_base()
+
+
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragma(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, SQLite3Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()
 
 
 class Schema(object):
