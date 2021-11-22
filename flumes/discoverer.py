@@ -44,6 +44,9 @@ class DiscovererOptions(Options):
         group.add_argument(
             "-d", "--dir", action="store", help="media content directory"
         )
+        group.add_argument(
+            "-f", "--force", action="store_true", default=False, help="force rescanning"
+        )
 
 
 class Discoverer(object):
@@ -54,6 +57,7 @@ class Discoverer(object):
         self.loop = GLib.MainLoop()
         self.quit = args.quit
         self.dir = args.dir
+        self.force = args.force
         schema = Schema(config)
         self.session = schema.create_session()
         # TODO Set the logging level
@@ -100,7 +104,7 @@ class Discoverer(object):
         if not exists:
             # Fill the File information
             self.add_file(basename, dirname, mtime)
-        if needs_update:
+        if needs_update or self.force:
             # Start discovering
             uri = "file://{}".format(path)
             logger.debug(
