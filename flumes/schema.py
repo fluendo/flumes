@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    MetaData,
     String,
     create_engine,
     event,
@@ -18,7 +19,16 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base, declared_attr, relationship, sessionmaker
 
+naming_convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(column_0_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
 Base = declarative_base()
+Base.metadata = MetaData(naming_convention=naming_convention)
 
 
 @event.listens_for(Engine, "connect")
@@ -79,13 +89,15 @@ class File(Base):
     path = Column(String)
     mtime = Column(DateTime)
 
-    info = relationship("Info", uselist=False, back_populates="file")
+    info = relationship(
+        "Info", uselist=False, back_populates="file", cascade="all, delete-orphan"
+    )
 
 
 class Info(Base):
     __tablename__ = "infos"
     id = Column(Integer, primary_key=True)
-    file_id = Column(Integer, ForeignKey("files.id"))
+    file_id = Column(Integer, ForeignKey("files.id", ondelete="CASCADE"))
 
     duration = Column(Integer)
     seekable = Column(Boolean)
@@ -95,21 +107,25 @@ class Info(Base):
     subtitle_streams = Column(Integer)
 
     file = relationship("File", back_populates="info")
-    streams = relationship("Stream", back_populates="info")
+    streams = relationship(
+        "Stream", back_populates="info", cascade="all, delete-orphan"
+    )
 
 
 class Stream(Base):
     __tablename__ = "streams"
     id = Column(Integer, primary_key=True)
-    parent_id = Column(Integer, ForeignKey("streams.id"))
+    parent_id = Column(Integer, ForeignKey("streams.id", ondelete="CASCADE"))
 
-    info_id = Column(Integer, ForeignKey("infos.id"))
+    info_id = Column(Integer, ForeignKey("infos.id", ondelete="CASCADE"))
     media_type = Column(String)
     type = Column(String)
 
     info = relationship("Info", back_populates="streams")
-    fields = relationship("Field", back_populates="stream")
-    children = relationship("Stream")
+    fields = relationship(
+        "Field", back_populates="stream", cascade="all, delete-orphan"
+    )
+    children = relationship("Stream", cascade="all, delete-orphan")
 
     __mapper_args__ = {"polymorphic_identity": "stream", "polymorphic_on": type}
 
@@ -190,7 +206,7 @@ class Field(Base):
     __tablename__ = "fields"
     id = Column(Integer, primary_key=True)
 
-    stream_id = Column(Integer, ForeignKey("streams.id"))
+    stream_id = Column(Integer, ForeignKey("streams.id", ondelete="CASCADE"))
 
     name = Column(String)
     value = Column(String)
