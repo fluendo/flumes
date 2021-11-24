@@ -27,6 +27,11 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install poetry
 
+    - name: Publish to PyPi
+      env:
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+      run: poetry publish --build
+
     - name: Create GitHub Release
       uses: actions/create-release@latest
       env:
@@ -37,9 +42,3 @@ jobs:
         body:
         draft: false
         prerelease: false
-
-    - name: Publish to PyPi
-      env:
-        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-      run: poetry publish --build
-
