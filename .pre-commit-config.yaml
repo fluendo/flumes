@@ -12,3 +12,8 @@ repos:
         entry: poetry run black .
         pass_filenames: false
         language: system
+      - id: yamllint
+        name: Check YAML files with yamllint
+        language: system
+        types: [yaml]
+        entry: poetry run yamllint
