@@ -459,10 +459,22 @@ category = "dev"
 optional = false
 python-versions = "*"
 
+[[package]]
+name = "yamllint"
+version = "1.26.3"
+description = "A linter for YAML files."
+category = "dev"
+optional = false
+python-versions = ">=3.5"
+
+[package.dependencies]
+pathspec = ">=0.5.3"
+pyyaml = "*"
+
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "86f3df405a8657cead207b594f9c0866fc1c1df0e96dda385283693df54ef044"
+content-hash = "cecbba9c306ef7095cb5e3e6ebfef39dd7aa4c1fb5f30476ab2de99ad2244802"
 
 [metadata.files]
 alembic = [
@@ -843,4 +855,7 @@ virtualenv = [
 wcwidth = [
     {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},
     {file = "wcwidth-0.2.5.tar.gz", hash = "sha256:c4d647b99872929fdb7bdcaa4fbe7f01413ed3d98077df798530e5b04f116c83"},
+]
+yamllint = [
+    {file = "yamllint-1.26.3.tar.gz", hash = "sha256:3934dcde484374596d6b52d8db412929a169f6d9e52e20f9ade5bf3523d9b96e"},
 ]
