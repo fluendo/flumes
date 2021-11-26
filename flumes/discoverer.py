@@ -52,7 +52,7 @@ class DiscovererOptions(Options):
 
 class Discoverer(object):
     def __init__(self, config, args):
-        Gst.init()
+        Gst.init(None)
 
         self.config = config
         self.loop = GLib.MainLoop()
