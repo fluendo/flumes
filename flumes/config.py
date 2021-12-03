@@ -41,7 +41,7 @@ class Config(object):
             for c in self.conf_database_args:
                 cv = getattr(args, c, None)
                 if cv:
-                    self.config["Database"][c] = cv
+                    self.config["Database"][c] = str(cv)
 
         # Generate the other parameters based on the uri
         if "uri" in self.config["Database"]:
