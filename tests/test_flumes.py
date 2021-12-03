@@ -33,6 +33,6 @@ def test_config():
     )
     config = Config(args)
     assert config.get_database_driver() == "sqlite"
-    assert config.get_database_user() == "jl"
+    assert config.get_database_username() == "jl"
     assert config.get_database_password() == "foo"
     assert config.get_database_uri() == "sqlite://jl:foo@//"

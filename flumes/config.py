@@ -13,7 +13,7 @@ class Config(object):
     conf_database_args = [
         "uri",
         "drivername",
-        "user",
+        "username",
         "password",
         "host",
         "port",
@@ -61,7 +61,7 @@ class Config(object):
         # Generate the uri based on the other parameters
         url = URL.create(
             self.config["Database"]["drivername"],
-            username=self.config["Database"].get("user", None),
+            username=self.config["Database"].get("username", None),
             password=self.config["Database"].get("password", None),
             host=self.config["Database"].get("host", None),
             port=self.config["Database"].get("port", None),
@@ -78,8 +78,8 @@ class Config(object):
     def get_database_driver(self):
         return self.config["Database"]["drivername"]
 
-    def get_database_user(self):
-        return self.config["Database"]["user"]
+    def get_database_username(self):
+        return self.config["Database"]["username"]
 
     def get_database_password(self):
         return self.config["Database"]["password"]
