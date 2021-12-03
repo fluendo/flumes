@@ -51,7 +51,7 @@ class Config(object):
                     continue
                 cv = getattr(url, c, None)
                 if cv:
-                    self.config["Database"][c] = cv
+                    self.config["Database"][c] = str(cv)
                 elif c in self.config["Database"]:
                     del self.config["Database"][c]
 
