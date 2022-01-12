@@ -10,6 +10,7 @@ Media scanner and indexer for your media files.
 ## System dependencies
 Besides the dependencies of the package itself, your system needs to have:
 * gstreamer-1.0
+* Gio >=2.62
 
 ## Usage
 You need to provide a configuration on either `$HOME/.flumes` or a system wide configuration at `/etc/flumes`. The database parameters are modeled in the same way as `SQLAlchemy` URL parameters.
@@ -18,6 +19,16 @@ Sample configuration for sqlite3 database driver
 ```ini
 [Database]
 uri=sqlite:///flumes.db
+```
+
+Link the database to the folder:
+```
+poetry run flumes-discovery -i sqlite:///flumes.db -d <media content directory>  
+```
+
+Alternatively, use Dockerfile for development:
+```
+docker-compose -f docker-compose-dev.yml up
 ```
 
 ## Development
