@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  app:
+    restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./:/app
+    command: sh -c "cd /app && poetry install --no-dev --no-root && poetry run
+      flumes-discovery -d /app/tests/samples -i sqlite:///flumes-dev.db"
+    container_name: flumes-development-discovery
+
+networks:
+  default:
+    name: flumes-development-default
