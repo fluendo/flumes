@@ -104,7 +104,8 @@ class Discoverer(object):
             return False
 
     def _parse_type_value(self, s):
-        fields = s.split(",")
+        taglist = re.sub("(\{(?:\[??[^\[]*?\}))", "", s)
+        fields = taglist.split(",")
         if len(fields) > 1:
             regex = r"(?P<key>[\w-]*)\=\((?P<type>\w+)\)[\"]?(?P<value>[\w -\\]*)[\"]?"
             regex_c = re.compile(regex)
