@@ -146,10 +146,7 @@ class Discoverer(object):
             )
             self.discover_file(f.get_path(), mtime)
         elif event_type == Gio.FileMonitorEvent.DELETED:
-            logger.debug("File {} deleted".format(f.get_path()))
-            (dirname, basename) = self.rel_path(f.get_path())
-            db_file = self.get_file(basename, dirname)
-            self.session.delete(db_file)
+            self.delete_file(f)
 
     def discovery_done(self):
         self.numdiscoveries -= 1
@@ -180,6 +177,14 @@ class Discoverer(object):
         logger.debug("Adding file name={} path={} mtime={}".format(name, path, mtime))
         db_file = File(name=name, path=path, mtime=mtime)
         self.session.add(db_file)
+        self.session.commit()
+        return db_file
+
+    def delete_file(self, f):
+        logger.debug("File {} deleted".format(f.get_path()))
+        (dirname, basename) = self.rel_path(f.get_path())
+        db_file = self.get_file(basename, dirname)
+        self.session.delete(db_file)
         self.session.commit()
         return db_file
 
