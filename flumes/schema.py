@@ -84,7 +84,7 @@ class Meta(Base):
 
 class File(Base):
     __tablename__ = "files"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     name = Column(String)
     path = Column(String)
     mtime = Column(DateTime)
