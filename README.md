@@ -44,3 +44,17 @@ Install pre-commit hooks
 ```
 poetry run pre-commit install
 ```
+
+## New releases
+Upgrade release version number here:
+* __init__.py file
+* tests/test_flumes.py
+* pyproject.toml
+
+Tagging:
+```
+git tag -a "<version>" -m "Release <version>"
+```
+```
+git push origin --tags
+```
