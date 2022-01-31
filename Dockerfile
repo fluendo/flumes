@@ -8,6 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
 
 RUN apt-get update
-RUN apt-get install -y python3.9 python3-pip libcairo2-dev libpython3.9-dev libgirepository1.0-dev libgstreamer-plugins-base1.0-dev
+RUN apt-get install -f -y python3.9 python3-pip libcairo2-dev libpython3.9-dev libgirepository1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-good gstreamer1.0-libav
+RUN python3.9 -m pip install poetry
 RUN python3.9 -m pip install flumes==$FLUMES_VERSION
 CMD flumes-discovery -d $FLUMES_DIR -i $FLUMES_URI
