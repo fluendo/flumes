@@ -5,6 +5,7 @@ from alembic import command
 from alembic.config import Config
 from packaging.version import Version
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Column,
     DateTime,
@@ -99,7 +100,7 @@ class Info(Base):
     id = Column(Integer, primary_key=True)
     file_id = Column(Integer, ForeignKey("files.id", ondelete="CASCADE"))
 
-    duration = Column(Integer)
+    duration = Column(BigInteger)
     seekable = Column(Boolean)
     live = Column(Boolean)
     audio_streams = Column(Integer)
