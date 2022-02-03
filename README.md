@@ -58,3 +58,15 @@ git tag -a "<version>" -m "Release <version>"
 ```
 git push origin --tags
 ```
+
+## Database
+You must use alembic for database migration:
+```
+alembic revision --autogenerate
+```
+```
+alembic upgrade head
+```
+```
+alembic stamp head
+```
