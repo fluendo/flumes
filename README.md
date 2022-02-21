@@ -70,3 +70,18 @@ alembic upgrade head
 ```
 alembic stamp head
 ```
+
+## Useful commands
+You can force discovery to rescan all files at run time.
+* Find the running container's ID:
+```
+docker ps
+```
+* Check the Process ID (PID):
+```
+docker exec -it <container ID> ps -aux
+```
+* Now, you can send various signals to force the rescan:
+```
+docker exec -t -i <container ID> /bin/sh -c 'kill -USR1 <PID>'
+```
