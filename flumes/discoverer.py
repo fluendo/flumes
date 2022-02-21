@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import sys
+import signal
 from datetime import timezone
 from urllib.parse import urlparse
 
@@ -34,7 +35,6 @@ from .schema import (
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
 class DiscovererOptions(Options):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -59,6 +59,7 @@ class Discoverer(object):
         self.quit = args.quit
         self.dir = args.dir
         self.force = args.force
+        self.signal_received = False
         schema = Schema(config)
         self.session = schema.create_session()
         # TODO Set the logging level
@@ -83,16 +84,8 @@ class Discoverer(object):
         self.discoverer.connect("finished", self.on_finished)
         self.numdiscoveries = 0
         self.discoverer.start()
-        # Iterate over the files in the directory
-        self.numdirs = 1
-        self.path.enumerate_children_async(
-            "*",
-            Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
-            0,
-            None,
-            self.on_directory_content,
-            None,
-        )
+        GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGUSR1, self.on_usr1_signal, signal.SIGUSR1)
+        self.scan_root()
 
     def _has_gst_override(self):
         # FIXME we need python3-gst-1.0 package to be installed in the virtualenv for
@@ -125,7 +118,7 @@ class Discoverer(object):
         if not exists:
             # Fill the File information
             self.add_file(basename, dirname, mtime)
-        if needs_update or self.force:
+        if needs_update or self.force or self.signal_received:
             # Start discovering
             uri = "file://{}".format(path)
             logger.debug(
@@ -158,6 +151,7 @@ class Discoverer(object):
         self.numdirs -= 1
         if not self.numdirs:
             logger.debug("No more dirs")
+            self.signal_received = False
         self.check_quit()
 
     def check_quit(self):
@@ -364,7 +358,28 @@ class Discoverer(object):
     def on_directory_content(self, path, res, user_data):
         enum = path.enumerate_children_finish(res)
         enum.next_files_async(1, 0, None, self.on_file_found, None)
-
+    
+    def on_usr1_signal(self, signum):
+        if self.numdirs or self.numdiscoveries:
+            logger.debug('Currently scanning, nothing to do') 
+            return
+        elif signal.SIGUSR1:
+            self.signal_received = True
+            self.scan_root()
+            return True
+            
+    def scan_root(self):
+        # Iterate over the files in the directory
+        self.numdirs = 1
+        self.path.enumerate_children_async(
+            "*",
+            Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
+            0,
+            None,
+            self.on_directory_content,
+            None,
+        )
+        
     def start(self):
         self.loop.run()
 
