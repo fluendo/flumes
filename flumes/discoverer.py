@@ -3,8 +3,8 @@ import importlib
 import logging
 import os
 import re
-import sys
 import signal
+import sys
 from datetime import timezone
 from urllib.parse import urlparse
 
@@ -34,6 +34,7 @@ from .schema import (
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
 
 class DiscovererOptions(Options):
     def __init__(self, *args, **kwargs):
@@ -84,7 +85,9 @@ class Discoverer(object):
         self.discoverer.connect("finished", self.on_finished)
         self.numdiscoveries = 0
         self.discoverer.start()
-        GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGUSR1, self.on_usr1_signal, signal.SIGUSR1)
+        GLib.unix_signal_add(
+            GLib.PRIORITY_HIGH, signal.SIGUSR1, self.on_usr1_signal, signal.SIGUSR1
+        )
         self.scan_root()
 
     def _has_gst_override(self):
@@ -358,16 +361,16 @@ class Discoverer(object):
     def on_directory_content(self, path, res, user_data):
         enum = path.enumerate_children_finish(res)
         enum.next_files_async(1, 0, None, self.on_file_found, None)
-    
+
     def on_usr1_signal(self, signum):
         if self.numdirs or self.numdiscoveries:
-            logger.debug('Currently scanning, nothing to do') 
+            logger.debug("Currently scanning, nothing to do")
             return
         elif signal.SIGUSR1:
             self.signal_received = True
             self.scan_root()
             return True
-            
+
     def scan_root(self):
         # Iterate over the files in the directory
         self.numdirs = 1
@@ -379,7 +382,7 @@ class Discoverer(object):
             self.on_directory_content,
             None,
         )
-        
+
     def start(self):
         self.loop.run()
 
