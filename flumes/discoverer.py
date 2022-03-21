@@ -366,7 +366,7 @@ class Discoverer(object):
         if self.numdirs or self.numdiscoveries:
             logger.debug("Currently scanning, nothing to do")
             return
-        elif signal.SIGUSR1:
+        elif signum == signal.SIGUSR1:
             self.signal_received = True
             self.scan_root()
             return True
