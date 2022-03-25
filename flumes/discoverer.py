@@ -158,7 +158,7 @@ class Discoverer(object):
         self.check_quit()
 
     def check_quit(self):
-        if not self.numdirs and not self.numdiscoveries and self.quit:
+        if self.numdirs == 0 and self.numdiscoveries == 0 and self.quit:
             self.stop()
 
     def file_stat(self, name, path, mtime):
