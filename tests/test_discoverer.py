@@ -23,7 +23,7 @@ def test_on_usr1_signal(discoverer):
     assert usr2 == None
 
 
-# Copy a media file to database
+# Copy media file to monitored path
 def test_discover_newly_copied_file():
     # Setup
     discoverer_setup = discoverer_run_once()
@@ -59,3 +59,17 @@ def test_discover_newly_copied_file():
         cwd="tests",
     )
     db_delete_result.check_returncode()
+
+
+# Delete media file from monitored path
+def test_discover_removed_file():
+    # Setup
+    shutil.copy2(file_path + origin_file, file_path + destination_file)
+    discoverer_test = discoverer_run_once()
+    discoverer_test.start()
+    assert int(max_db_id()) == 2
+    # Test
+    os.remove(file_path + destination_file)
+    discoverer_test = discoverer_run_once()
+    discoverer_test.start()
+    assert int(max_db_id()) == 1
