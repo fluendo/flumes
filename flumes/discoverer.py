@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 import dateutil.parser
 import gi
+from pip import main
 
 gi.require_version("Gst", "1.0")
 gi.require_version("GstPbutils", "1.0")
@@ -398,3 +399,7 @@ def run():
     config = Config(args)
     discoverer = Discoverer(config, args)
     discoverer.start()
+
+
+if __name__ == "__main__":
+    run()
