@@ -9,7 +9,9 @@ from flumes.discoverer import Discoverer, DiscovererOptions
 ####### Global Variables ########
 #################################
 
-database = "flumes-test.db"
+db_name = "flumes-test.db"
+db_path = "sqlite:///tests/flumes-test.db"
+db_rel_path = "tests/flumes-test.db"
 file_path = "tests/samples/"
 origin_file = "big-buck-bunny-480p-30sec.mp4"
 destination_file = "sample-file.mp4"
@@ -27,7 +29,7 @@ def discoverer():
     args = options.parse_args(
         [
             "-i",
-            "sqlite:///" + database,
+            db_path,
             "-d",
             file_path,
         ]
@@ -39,9 +41,7 @@ def discoverer():
 # Run the discoverer in a single iteration
 def discoverer_run_once():
     options = DiscovererOptions()
-    args = options.parse_args(
-        ["-i", "sqlite:///tests/" + database, "-d", file_path, "-q"]
-    )
+    args = options.parse_args(["-i", db_path, "-d", file_path, "-q"])
     config = Config(args)
     return Discoverer(config, args)
 
@@ -56,7 +56,7 @@ def max_db_id():
     discoverer_test = discoverer_run_once()
     discoverer_test.start()
     db_select_result = subprocess.run(
-        ["sqlite3", database, "select MAX(id) from files;"],
+        ["sqlite3", db_name, "select MAX(id) from files;"],
         capture_output=True,
         text=True,
         cwd="tests",

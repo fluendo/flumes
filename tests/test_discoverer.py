@@ -2,6 +2,7 @@ import os
 import shutil
 import signal
 import subprocess
+import time
 
 from .conftest import *
 
@@ -36,7 +37,7 @@ def test_discover_newly_copied_file():
     db_select_result = subprocess.run(
         [
             "sqlite3",
-            database,
+            db_name,
             "select name from files where id={};".format(expected_file_db_id),
         ],
         capture_output=True,
@@ -51,7 +52,7 @@ def test_discover_newly_copied_file():
     db_delete_result = subprocess.run(
         [
             "sqlite3",
-            database,
+            db_name,
             "delete from files where id={};".format(expected_file_db_id),
         ],
         capture_output=True,
@@ -73,3 +74,31 @@ def test_discover_removed_file():
     discoverer_test = discoverer_run_once()
     discoverer_test.start()
     assert int(max_db_id()) == 1
+
+
+# Trigger manual rescan
+def test_manual_rescan():
+    # Setup
+    shutil.copy2(file_path + origin_file, file_path + destination_file)
+    process_handle = subprocess.Popen(
+        "python -m flumes.discoverer -d " + file_path + " -i " + db_path, shell=True
+    )
+    time.sleep(6)
+    os.rename(file_path + destination_file, file_path + "sample-file2.mp4")
+    # Test
+    subprocess.run("kill -USR1 " + str(process_handle.pid), shell=True)
+    time.sleep(6)
+    db_select_result = subprocess.run(
+        ["sqlite3", db_name, "select MAX(id) from files;"],
+        capture_output=True,
+        text=True,
+        cwd="tests",
+    )
+    time.sleep(1)
+    assert db_select_result.stdout[:-1] == "2"
+    # Teardown
+    process_handle.terminate()
+    subprocess.run("kill -KILL " + str(process_handle.pid + 1), shell=True)
+    time.sleep(3)
+    os.remove(db_rel_path)
+    os.remove(file_path + "sample-file2.mp4")
