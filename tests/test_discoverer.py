@@ -73,3 +73,27 @@ def test_discover_removed_file():
     discoverer_test = discoverer_run_once()
     discoverer_test.start()
     assert int(max_db_id()) == 1
+    os.remove("tests/flumes-test.db")
+
+
+# Modify media file in monitored path
+def test_modify_media_file():
+    # Setup
+    shutil.copy2(file_path + origin_file, file_path + destination_file)
+    discoverer_test = discoverer_run_once()
+    discoverer_test.start()
+    # Test
+    os.rename("tests/samples/sample-file.mp4", "tests/samples/sample-file2.mp4")
+    discoverer_test = discoverer_run_once()
+    discoverer_test.start()
+    db_select_result = subprocess.run(
+        ["sqlite3", database, "select name from files where id=2;"],
+        capture_output=True,
+        text=True,
+        cwd="tests",
+    )
+    assert db_select_result.stdout[:-1] == "sample-file2.mp4"
+    assert int(max_db_id()) == 2
+    # Teardown
+    os.remove("tests/flumes-test.db")
+    os.remove(file_path + "sample-file2.mp4")

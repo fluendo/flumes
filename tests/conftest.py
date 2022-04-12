@@ -27,7 +27,7 @@ def discoverer():
     args = options.parse_args(
         [
             "-i",
-            "sqlite:///" + database,
+            "sqlite:///tests/" + database,
             "-d",
             file_path,
         ]
