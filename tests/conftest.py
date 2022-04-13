@@ -10,13 +10,15 @@ from flumes.discoverer import Discoverer, DiscovererOptions
 #################################
 
 db_name = "flumes-test.db"
-db_path = "sqlite:///tests/flumes-test.db"
-db_rel_path = "tests/flumes-test.db"
+db_rel_path = "tests/" + db_name
+sqlite_command = "sqlite:///" + db_rel_path
 file_path = "tests/samples/"
 origin_file = "big-buck-bunny-480p-30sec.mp4"
 destination_file = "sample-file.mp4"
 modify_file = "sample-file2.mp4"
-flumes_discoverer = "python -m flumes.discoverer -d " + file_path + " -i " + db_path
+flumes_discoverer = (
+    "python -m flumes.discoverer -d " + file_path + " -i " + sqlite_command
+)
 
 
 #################################
@@ -31,7 +33,7 @@ def discoverer():
     args = options.parse_args(
         [
             "-i",
-            db_path,
+            sqlite_command,
             "-d",
             file_path,
         ]
@@ -43,7 +45,7 @@ def discoverer():
 # Run the discoverer in a single iteration
 def discoverer_run_once():
     options = DiscovererOptions()
-    args = options.parse_args(["-i", db_path, "-d", file_path, "-q"])
+    args = options.parse_args(["-i", sqlite_command, "-d", file_path, "-q"])
     config = Config(args)
     return Discoverer(config, args)
 
