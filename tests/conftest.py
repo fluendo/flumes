@@ -16,6 +16,7 @@ file_path = "tests/samples/"
 origin_file = "big-buck-bunny-480p-30sec.mp4"
 destination_file = "sample-file.mp4"
 modify_file = "sample-file2.mp4"
+cwd = "tests"
 flumes_discoverer = (
     "python -m flumes.discoverer -d " + file_path + " -i " + sqlite_command
 )
@@ -55,14 +56,23 @@ def discoverer_run_once():
 #################################
 
 
-# Returns the last available file id
-def max_db_id():
-    discoverer_test = discoverer_run_once()
-    discoverer_test.start()
+# Returns the maximum file id encountered in database
+def get_max_id_db():
     db_select_result = subprocess.run(
         ["sqlite3", db_name, "select MAX(id) from files;"],
         capture_output=True,
         text=True,
-        cwd="tests",
+        cwd=cwd,
+    )
+    return db_select_result.stdout[:-1]
+
+
+# Returns number of entries encountered in database
+def get_num_entries_db():
+    db_select_result = subprocess.run(
+        ["sqlite3", db_name, "select COUNT(*) from files;"],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
     )
     return db_select_result.stdout[:-1]
