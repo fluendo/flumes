@@ -93,6 +93,9 @@ class File(Base):
     info = relationship(
         "Info", uselist=False, back_populates="file", cascade="all, delete-orphan"
     )
+    error = relationship(
+        "Error", uselist=False, back_populates="file", cascade="all, delete-orphan"
+    )
 
 
 class Info(Base):
@@ -226,3 +229,13 @@ class Tag(Base):
     value = Column(String)
 
     stream = relationship("Stream", back_populates="tags")
+
+
+class Error(Base):
+    __tablename__ = "errors"
+    id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey("files.id", ondelete="CASCADE"))
+
+    error_log = Column(String)
+
+    file = relationship("File", back_populates="error")
