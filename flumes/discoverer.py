@@ -22,6 +22,7 @@ from .options import Options
 from .schema import (
     Audio,
     Container,
+    Error,
     Field,
     File,
     Info,
@@ -291,8 +292,21 @@ class Discoverer(object):
             self.discovery_done()
             return
 
-        if error:
+        if type(error) == gi.repository.GLib.GError:
             logger.error("With error {}".format(error))
+            path = urlparse(info.get_uri()).path
+            (dirname, basename) = self.rel_path(path)
+            file = self.session.query(File).filter(File.name == basename).first()
+            db_error = Error()
+            db_error.file_id = file.id
+            db_error.error_log = str(error)
+            try:
+                self.session.add(db_error)
+                self.session.commit()
+            except:
+                logger.error("Couldn't add error {} to the database".format(error))
+            finally:
+                self.session.close()
 
         path = urlparse(info.get_uri()).path
         (dirname, basename) = self.rel_path(path)
