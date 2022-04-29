@@ -20,7 +20,9 @@ cwd = "tests"
 flumes_discoverer = (
     "python -m flumes.discoverer -d " + file_path + " -i " + sqlite_command
 )
-
+error_file = '"demuxing_error.mp4"'
+error = "error"
+gst = "gst"
 
 #################################
 ####### Discoverer Setup ########

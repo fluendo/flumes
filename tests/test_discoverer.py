@@ -95,16 +95,16 @@ def test_discover_removed_file():
     discoverer_handle = discoverer_run_once()
     discoverer_handle.start()
     time.sleep(3)
-    assert int(get_max_id_db()) == 2
-    assert int(get_num_entries_db()) == 2
+    assert int(get_max_id_db()) == 3
+    assert int(get_num_entries_db()) == 3
     # Test
     os.remove(file_path + destination_file)
     time.sleep(3)
     discoverer_handle = discoverer_run_once()
     discoverer_handle.start()
     time.sleep(3)
-    assert int(get_max_id_db()) == 1
-    assert int(get_num_entries_db()) == 1
+    assert int(get_max_id_db()) == 2
+    assert int(get_num_entries_db()) == 2
     # Teardown
     teardown
 
@@ -175,4 +175,31 @@ def test_modify_media_file():
     assert int(get_max_id_db()) == expected_file_db_id
     # Teardown
     os.remove(file_path + modify_file)
+    teardown
+
+
+# Database error table
+def test_error_table():
+    # Setup
+    setup
+    discoverer_handle = discoverer_run_once()
+    discoverer_handle.start()
+    time.sleep(3)
+    # Test
+    db_select_result = subprocess.run(
+        [
+            "sqlite3",
+            db_name,
+            "select errors.error_log from errors inner join files on files.id=errors.file_id where files.name = "
+            + error_file
+            + ";",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+    )
+    # Main keywords that should appear in all reported errors
+    assert error in db_select_result.stdout
+    assert gst in db_select_result.stdout
+    # Teardown
     teardown
