@@ -4,7 +4,7 @@ from flumes.discoverer import Discoverer, DiscovererOptions
 
 
 def test_version():
-    assert __version__ == "0.1.19"
+    assert __version__ == "0.1.20"
 
 
 def test_config():
