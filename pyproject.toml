@@ -1,8 +1,12 @@
 [tool.poetry]
 name = "flumes"
 version = "0.1.21"
-description = ""
+description = "Scan and index your media files"
 authors = ["Jorge Zapata <jorgeluis.zapata@gmail.com>"]
+readme = "README.md"
+homepage = "https://fluendo.com"
+repository = "https://github.com/fluendo/flumes"
+license = "LGPL-2.1-only"
 
 [tool.poetry.dependencies]
 python = "^3.9"
