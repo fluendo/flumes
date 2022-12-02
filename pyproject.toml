@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flumes"
-version = "0.1.21"
+version = "0.1.22"
 description = "Scan and index your media files"
 authors = ["Jorge Zapata <jorgeluis.zapata@gmail.com>"]
 readme = "README.md"
